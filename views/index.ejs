@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Chatroom</title>
+  <style type="text/css">
+    .voffset  { margin-top: 2px; }
+    .voffset1 { margin-top: 5px; }
+    .voffset2 { margin-top: 10px; }
+    .voffset3 { margin-top: 15px; }
+    .voffset4 { margin-top: 30px; }
+    .voffset5 { margin-top: 40px; }
+    .voffset6 { margin-top: 60px; }
+    .voffset7 { margin-top: 80px; }
+    .voffset8 { margin-top: 100px; }
+    .voffset9 { margin-top: 150px; }
+    .container{
+      /*border: 1px solid silver;*/
+      padding:20px;
+    }
+    .chat_window{
+      height:450px;
+      overflow-y: scroll;
+      border: 1px solid silver;
+      padding-left:20px;
+      /*overflow:hidden;*/
+    }
+    #users{
+      height: 200px;
+      overflow-y:scroll;
+      border: 1px solid silver;
+      padding: 10px 0 0 20px;
+    }
+    .input_text{
+      width:100%;
+    }
+    textarea{
+      resize:none;
+    }
+    .user_event{
+      font-style: italic;
+    }
+  </style>
+  <!-- jQuery -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+  <!-- Socket -->
+  <script type ="text/javascript" src="/socket.io/socket.io.js"></script>
+  <script>
+    var name;
+    $(function(){
+      //this triggers the connection event in our server
+      var socket = io.connect();
+      //All the socket stuff after the above line
+      name = prompt("What is your name?");
+      socket.emit("got_a_new_user", {name: name});
+      //Store name or guest name
+      socket.on("user_name", function(data){
+        name = data.name;
+      })
+      socket.on("update_users", function(data){
+        $("#users").html("");
+        for(user in data.users){
+          $("#users").append("<p>"+data.users[user]+"</p>");
+        }
+      })
+
+      socket.on("new_user", function(data){
+        $("#chat_box").append("<p class='user_event'>" + data.message + "</p>");
+        $('#chat_box').scrollTop($('#chat_box')[0].scrollHeight);
+      });
+      socket.on("initial_messages", function(data){
+        for(message in data.messages){
+          $("#chat_box").append("<p>" + data.messages[message] + "</p>");
+          $('#chat_box').scrollTop($('#chat_box')[0].scrollHeight);
+        }
+      });
+      $("#chat_submit").click(function(){
+        var new_message = name + ": " + $("#message").val();
+        socket.emit("message_submit", {message: new_message})
+      });
+      socket.on("new_message", function(data){
+        $("#chat_box").append("<p>" + data.message + "</p>");
+        $('#chat_box').scrollTop($('#chat_box')[0].scrollHeight);
+      })
+      socket.on("user_disconnected", function(data){
+        $("#chat_box").append("<p class='user_event'>" + data.message + "</p>");
+        $('#chat_box').scrollTop($('#chat_box')[0].scrollHeight);
+      })
+    })
+    
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-7">
+        <h3>Chatroom</h3>
+      </div>
+      <div class="col-xs-3 col-xs-offset-1 voffset3">
+        <h4>Users <span class="glyphicon glyphicon-user"></span></h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-7">
+        <div class="chat_window" id="chat_box">
+
+        </div>
+        <textarea class = "input_text" rows="2" id="message"></textarea>
+        <button class="btn btn-primary btn-xs pull-right" id="chat_submit">Enter</button>
+      </div>
+      <div class="col-xs-3 col-xs-offset-1">
+        <div id="users">
+
+        </div>
+      </div>
+    </div><!--  End row -->
+  </div>
+</body>
+</html>
